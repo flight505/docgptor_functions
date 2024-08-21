@@ -11,7 +11,7 @@ from . import arg_utils
 # via `gpt_function.SETTINGS["openai_client"] = OpenAI()`.
 # If the user doesn't set up the client, it gets set up automatically with
 # OpenAI() the first time a client is needed
-SETTINGS = {"openai_client": None}
+SETTINGS = {"docgptor_openai_client": None}
 
 ADDITIONAL_DOCS = """
 
@@ -33,7 +33,7 @@ gpt_system_prompt: Optional[str]
 """
 
 
-def gpt_function(func):
+def docgpt(func):
     """Decorator that runs a function on a GPT model."""
 
     requested_format = typing.get_type_hints(func).get("return", str)
