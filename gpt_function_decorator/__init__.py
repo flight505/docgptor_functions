@@ -1,1 +1,1 @@
-from .gpt_function import docgpt, ReasonedAnswer
+from docgptor import docgpt, ReasonedAnswer
