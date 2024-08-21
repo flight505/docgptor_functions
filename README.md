@@ -1,16 +1,16 @@
-# gpt-function-decorator
+# DocGPTor
 
 [![PyPI](https://img.shields.io/pypi/v/gpt-function-decorator.svg)](https://pypi.org/project/gpt-function-decorator/)
 [![Tests](https://github.com/zulko/gpt-function-decorator/actions/workflows/test.yml/badge.svg)](https://github.com/zulko/gpt-function-decorator/actions/workflows/test.yml)
 [![Changelog](https://img.shields.io/github/v/release/zulko/gpt-function-decorator?include_prereleases&label=changelog)](https://github.com/zulko/gpt-function-decorator/releases)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](https://github.com/zulko/gpt-function-decorator/blob/main/LICENSE)
 
-This library provides a decorator to define no-code functions that will be "run" by ChatGPT:
+DocGPTor is a Python library that allows developers to define functions whose logic is executed by ChatGPT based on the function’s docstring. It simplifies the process of creating no-code functions by leveraging GPT models to process inputs and generate structured outputs.
 
 ```python
-from gpt_function_decorator import gpt_function
+from docgptor import docgpt
 
-@gpt_function
+@docgpt
 def format_date(date):
     """Format the date as yyyy-mm-dd"""
 
