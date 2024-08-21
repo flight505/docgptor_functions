@@ -1,4 +1,4 @@
-from gpt_function_decorator import gpt_function
+from docgptor import docgpt
 
 
 def test_ai_healthcare_example():
