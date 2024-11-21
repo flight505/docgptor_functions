@@ -8,7 +8,7 @@ REwork the code, we need it updated for the tasks.
 
 Start by aligning with new updated openai API.
 
-Focus is the newer:
+Fo xcus is the newer:
 https://github.com/openai/openai-cookbook/tree/main/examples/o1
 1 # chained calls for reasoning structured outputs
 2 # reasoning for data validation
