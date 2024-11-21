@@ -1,25 +1,16 @@
+# gpt-function-decorator
+
 [![PyPI](https://img.shields.io/pypi/v/gpt-function-decorator.svg)](https://pypi.org/project/gpt-function-decorator/)
 [![Tests](https://github.com/zulko/gpt-function-decorator/actions/workflows/test.yml/badge.svg)](https://github.com/zulko/gpt-function-decorator/actions/workflows/test.yml)
 [![Changelog](https://img.shields.io/github/v/release/zulko/gpt-function-decorator?include_prereleases&label=changelog)](https://github.com/zulko/gpt-function-decorator/releases)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](https://github.com/zulko/gpt-function-decorator/blob/main/LICENSE)
 
-TODO:
-REwork the code, we need it updated for the tasks.
-
-Start by aligning with new updated openai API.
-
-Focus is the newer:
-https://github.com/openai/openai-cookbook/tree/main/examples/o1
-1 # chained calls for reasoning structured outputs
-2 # reasoning for data validation
-3 # Using reasoning for routine generation
-
-DocGPTor is a Python library that allows developers to define functions whose logic is executed by ChatGPT based on the function’s docstring. It simplifies the process of creating no-code functions by leveraging GPT models to process inputs and generate structured outputs.
+This library provides a decorator to define no-code functions that will be "run" by ChatGPT:
 
 ```python
-from docgptor import docgpt
+from gpt_function_decorator import gpt_function
 
-@docgpt
+@gpt_function
 def format_date(date):
     """Format the date as yyyy-mm-dd"""
 
@@ -33,10 +24,10 @@ format_date("12/31/2008.") # returns '2008-12-31'
 Here is another example with a more structured output:
 
 ```python
-from gpt_function_decorator import gpt_function, ReasonedAnswer
+from gpt_function_decorator import gpt_function
 
 @gpt_function
-def deduplicate_celebrities(names) -> ReasonedAnswer(list[str]):
+def deduplicate_celebrities(names) -> list[str]:
     """Return the deduplicated version of the celebrities list."""
 
 celebrities = [
@@ -46,12 +37,12 @@ celebrities = [
     "Lionel Messi",
     "Leo diCaprio"
 ]
-answer = deduplicate_celebrities(celebrities)
+answer = deduplicate_celebrities(celebrities, gpt_reasoning=true)
 
-print (answer.result)
+print (answer)
 # ['Leo Messi', 'Mozart', 'Leo diCaprio']
 
-print (answer.reasoning)
+print (answer.__reasoning__)
 # `Leo Messi` and `Lionel Messi` refer to the same person,
 # and `Mozart` and `W. A. Mozart` also refer to the same individual.
 # We include `Leo diCaprio` as it is a distinct name.
@@ -72,12 +63,12 @@ def sentiment(text: str) -> float:
     """
 ```
 
-One advantage of `marvin` has been the possibility to enforce an output schema, however this is now a feature we get for free from the OpenAI API. In comparison, the `gpt_function`, which leverages the new OpenAI feature, is much more lightweight (it only depends on `openai`, and the core logics is ~50 lines of code) and provides extra practical features like automated keyword arguments and reasoned answers.
+One advantage of `marvin` has been the possibility to enforce an output schema, however this is now a feature we get for free from the OpenAI API. In comparison, the `gpt_function`, which leverages the new OpenAI feature, is much more lightweight (it only depends on `openai`, and the core logics is ~50 lines of code) and provides a few extra practical features like "answers with reasoning", providing output field descriptions to the GPT, and adding gpt-related keyword arguments to the decorated functions.
+
 
 ## Installation and setup
 
 Install this library using `pip`:
-
 ```bash
 pip install gpt-function-decorator
 ```
@@ -95,9 +86,11 @@ gpt_function_decorator.SETTINGS["openai_client"] = OpenAI(api_key="...", ...)
 
 ## Usage:
 
+
 ### Basics
 
-Import the decorator and apply it to a function whose docstring explains what to do with the parameters. The docstring can
+Import the decorator and apply it to a function whose docstring explains what to do with the parameters. The docstring can 
+
 
 ```python
 from gpt_function_decorator import gpt_function
@@ -119,7 +112,7 @@ The docstring can be any normal Python docstring. Longer docstrings, as long as 
 @gpt_function
 def species(breed):
     """Return the species for the given breed.
-  
+    
     Parameters
     ----------
     breed:
@@ -138,13 +131,13 @@ species("Black widow") # Returns "spider"
 
 ### Formatted docstrings
 
-This is a library for lazy people, and as an option you can write the docstring as below so the `{bracketed}` fields will get replaced by the function's parameters. In some cases this can help ChatGPT as it will be presented with a shorter and more to-the-point prompt.
+This is a library for lazy people, and as an option you can write the docstring as below so the `{bracketed}` fields will get replaced by the function's parameters. In some cases this can help ChatGPT as it will be presented with a shorter and more to-the-point prompt. 
 
 ```python
 @gpt_function
 def find_rhyme(reference_word, topic):
     """Return a word related to {topic} that rhymes with {reference_word}"""
-  
+    
 find_rhyme("boat", topic="space exploration") # returns "remote"
 ```
 
@@ -182,7 +175,7 @@ Lists should always declare their element type (for instance `list[str]`):
 @gpt_function
 def list_famous_composers(n) -> list[str]:
     "Return the {n} most famous composers."
-  
+    
 list_famous_composers(20)
 # Returns ['Johann Sebastian Bach',  'Ludwig van Beethoven', ...]
 ```
@@ -191,7 +184,7 @@ list_famous_composers(20)
 
 ### Advanced output formatting with Pydantic
 
-The OpenAI API doesn't seem to like types like `tuple` too much, and will refuse a `Dict` type as it doesn't know what key names to use. If To specify a `Dict` output with minimal boilerplate you can use the `TypedDict`:
+The OpenAI API doesn't seem to like types like `tuple` too much, and will refuse a `Dict` type as it doesn't know what key names to use. If To specify a `Dict` output with minimal boilerplate you can use the `TypedDict`: 
 
 ```python
 from typing_extensions import TypedDict # or just "typing", for Python>=3.12
@@ -214,7 +207,7 @@ from pydantic import BaseModel
 class USPresident(BaseModel):
     birth: int
     name: str
-  
+    
 
 @gpt_function
 def first_us_presidents(n) -> list[USPresident]:
@@ -228,34 +221,78 @@ first_us_presidents(3)
 
 With Pydantic models you can have output schemas as nested and complex as you like (see [the docs](https://cookbook.openai.com/examples/structured_outputs_intro)), although it seems that the more difficult you'll make it for the GPT to understand how to fill the schema, the longer it will take (not sure about costs).
 
+### Using Pydantic fields to specify outputs
+
+Finally, the `@gpt_function` decorator will also transmit any Pydantic field description to the GPT, which is a nice way to provide more specifications on each element of the output:
+
+```python
+from pydantic import BaseModel, Field
+
+class USPresident(BaseModel):
+    birth_date: str = Field(description="date in yyyy-mm-dd")
+    name: str = Field(description="Family name")
+
+@gpt_function
+def first_us_presidents(n) -> list[USPresident]:
+    """Return the {n} first US presidents with their birth date"""
+
+first_us_presidents(3)
+# [USPresident(birth_date='1732-02-22', name='Washington'),
+#  USPresident(birth_date='1735-10-30', name='Adams'),
+#  USPresident(birth_date='1751-03-30', name='Jefferson')]
+```
+
 ### Using `gpt_function` on class methods
 
 Class methods can use the `gpt_function` just like any other function. The `self` can then be used for interpolation in the docstring but beware that only access to attributes, not other class methods, is supported (attributes computed via `property` are also supported)
 
 ```python
 from gpt_function_decorator import gpt_function
-from typing_extensions import TypedDict
+from pydantic import BaseModel
 
+class Event:
+    year: int
+    summary: str
 
 class City:
     def __init__(self, name, country):
         self.name = name
         self.country = country
-  
+    
     @property
     def full_name(self):
         return f"{self.name} ({self.country})"
-  
+    
     @gpt_function
-    def events(self, period) -> list[TypedDict("o", {"year": int, "event": str})]:
+    def events(self, period) -> list[Event]:
         """List events from {period} that happened in {self.full_name}"""
 
 city = City("Boston", "England")
 
-city.events(period="14th century", gpt_model="gpt-4o-2024-08-06")
-# [{'year': 1313, 'event': 'Boston fairs are among the busiest...'},
-#  {'year': 1390, 'event': 'Boston Guildhall is constructed...'},
+city.events(period="14th century", gpt_model="gpt-4o")
+# [Event(year=1313, summary='Boston fairs are among the busiest...')
+#  Event(year=1390, summary='Boston Guildhall is constructed...'),
 #  ...]
+```
+
+Class `staticmethods` can also be gpt functions which allows to group a Pydantic output format with a function that generates it: 
+
+```python
+from gpt_function_decorator import gpt_function
+from pydantic import BaseModel
+
+class Car(BaseModel):
+    brand: str
+    age: int
+    damaged: bool
+
+    @staticmethod
+    @gpt_function
+    def from_description(description) -> "Car":
+        """Extract car properties from the description."""
+
+car = Car.from_description("A 5-year-old Subaru in mint condition")
+# Car(brand='Subaru', age=5, damaged=False)
 ```
 
 ### Asking the GPT for a reasoned answer
@@ -272,30 +309,31 @@ could_have_met("Chopin", celebrities=[
 ])
 ```
 
-It turns out that this function struggles to find the right answer. Its output (generated by `gpt-4o-mini`) varies a lot and typically includes Peggy Lee, who lived in a different century. This is because this short prompt actually requires real reasoning from the GPT: first listing everyone's birth and death years, then checking who overlapped with Chopin.
+It turns out that this function struggles to find the right answer. Its output (generated by `gpt-4o-mini`) varies a lot and typically includes Peggy Lee, who lived in a different century. This is because this short prompt actually requires real reasoning from the GPT: first listing everyone's birth and death years, then checking who overlapped with Chopin. 
 
-To get a smarter answer, we provide a `ReasonedAnswer` constructor for the output schema. Concretely, it requests the GPT answer to be a have two fields, `reasoning` and `result`. This causes the answers to be more verbose, which is slower and more costly but also a great help:
-
+To get a smarter answer, we provide a `gpt_reasoning` parameter to gpt-decorated functions. Concretely, it requests the GPT answer to have two fields, `reasoning` and `result` (the final result will have the reasoning under the `.__reasoning__` attribute). The GPT answers is more verbose, and therefore slower and more costly, but also more helpful:
 - The `reasoning` field gives the GPT room to "think through" the problem and produce better answers.
 - It is now possible for the user to see what the GPT's "reasoning" was, and whether a wrong answer was caused by a lack of knowledge, or logics, etc.
 - It reduces the risk that some of GPT's reasoning and formatting ends up polluting the result's schema.
 
-So let's just change our function's output type hint to `ReasonedAnswer(list[str])` and observe the improvement:
+So let's ask for a reasoning and observe the improvement:
 
 ```python
-from gpt_function_decorator import gpt_function, ReasonedAnswer
+from gpt_function_decorator import gpt_function
 
 @gpt_function
-def could_have_met(person, celebrities) -> ReasonedAnswer(list[str]):
+def could_have_met(person, celebrities) -> list[str]:
     """List the names in {celebrities} that {person} could have met."""
 
-answer = could_have_met("Chopin", celebrities=[
+celebrities = [
     "Napoleon", "Jefferson", "Mozart", "Julius Cesar", "Peggy Lee", "Beethoven"
-])
-print (answer.result)
+]
+answer = could_have_met("Chopin", celebrities, gpt_reasoning=True)
+
+print (answer)
 # ['Napoleon', 'Jefferson', 'Beethoven']
 
-print (answer.reasoning)
+print (answer.__reasoning__)
 # Frédéric Chopin was born in 1810 and died in 1849. To determine which
 # celebrities he could have met, we need to consider the lifespans of
 # each individual listed:  
@@ -310,12 +348,14 @@ print (answer.reasoning)
 # - Ludwig van Beethoven (1770-1827) could have met Chopin.  
 ```
 
+
 ### Parameters for the GPT model
 
 The `gpt_function` decorator adds two parameters to the function it decorates:
-
 - `gpt_model`: this allows the function's user to switch between `gpt-4o-mini` (the default, fast and cheap but less capable) and `gpt-4o` (any compatible version).
 - `gpt_system_prompt`: this enables the user to tweak the answer as they would like by asking the GPT to focus on some aspects, or to roleplay.
+- `gpt_reasoning` as described in the previous section.
+- `gpt_debug`: this will cause the function to print the full prompt that it sends to the GPT (useful for troubleshooting or just getting a sense of what's going on).
 
 As an example, let's start from this function:
 
@@ -334,9 +374,35 @@ Now when calling this function we also ask for a more specific list, and a bette
 list_movies(
     "Brad Pitt",
     gpt_system_prompt="Don't list movies released before 2020.",
-    gpt_model="gpt-4o-2024-08-06" #gpt-4o knows more than -mini
+    gpt_model="gpt-4o" #gpt-4o knows more than -mini
 )
 # ['Bullet Train', 'Babylon']
+```
+
+
+### Async GPT functions
+
+Your GPT function can be `async`, which can be very useful as OpenAI may be slow to answer some requests but will also let you send many requests in parallel:
+
+```python
+import asyncio
+
+@gpt_function
+async def summarize(text):
+    """Summarize the text."""
+
+# In another async function, or directly in a notebook, call the function
+# to summarize several texts asynchronously (in "parallel"):
+summaries = await asyncio.gather(*[summarize(txt) for txt in texts])
+```
+
+For practicality, async functions decorated with `@gpt_function` get an extra parameter `semaphore` which enables to limit the number of concurrent calls to OpenAI. In the example above, if there is a lot of texts to summarize, you could ask for only 10 OpenAI requests at a time:
+
+```python
+semaphore = asyncio.Semaphore(10)
+summaries = await asyncio.gather(*[
+    summarize(txt, semaphore=semaphore) for txt in texts
+])
 ```
 
 ## Limitations
@@ -348,6 +414,7 @@ Ye be warned:
 - GPT answers can be changing and unreliable.
 - Calls to OpenAI-powered functions generally have a ~0.5-1 second of overhead then get slower as the input and output increase in size. So pure-python solutions will often beat GPT-based solutions. Sometimes it's better to just ask the ChatGPT app for python code and run the python code.
 
+
 ## A future with GPT-powered functions?
 
 GPTs are not yet fast and cheap enough to be used anywhere, but when they are it will transform a lot of how we write code (assuming we still code).
@@ -355,8 +422,8 @@ GPTs are not yet fast and cheap enough to be used anywhere, but when they are it
 For instance instead of having developers write zillions of messages to help users troubleshoot errors, we'll use a function like this:
 
 ```python
-@gpt_function
-def help_troubleshoot(error_traceback: str) -> ReasonedAnswer(str):
+@gpt_function(reasoning=True)
+def help_troubleshoot(error_traceback: str) -> str:
     """Return a short analysis of the Python error: {error_traceback}"""
 ```
 
@@ -366,13 +433,12 @@ With this we can write a function that queries webpages and looks into the issue
 import requests
 import traceback
 
-
 def query_webpages_and_help_troubleshoot(url):
     try:
         requests.get(url)
     except Exception as error:
         gpt_advice = help_troubleshoot(traceback.format_exc())
-        raise Exception(str(gpt_advice)) from error
+        raise Exception(f"{gpt_advice}\n{gpt_advice.__reasoning__}") from error
 ```
 
 And now we can run it into a wall and watch it understand the issue:
@@ -399,7 +465,6 @@ main issue arises from the `socket.gaierror` ... etc.
 This open-source project is hosted on Github under the Apache 2.0 license. Everyone is welcome to contribute!
 
 To release a new version:
-
 - Increment the version number in `pyproject.toml`
 - Create a new-release with that version on Github.
 - The Github Actions will pick it from there and publish
